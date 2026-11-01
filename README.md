@@ -4,7 +4,7 @@ Persistent email delivery for Convex, with **Plunk and Resend adapters**.
 
 One component owns the queue, future sends, pacing, retries, and delivery records. An adapter owns the provider request and failure policy. Keep your React Email templates and local preview workflow.
 
-Version **0.0.1**. Apache-2.0. npm publication and Convex directory submission are pending. This repository contains the package, example backend, marketing website, and searchable documentation.
+Version **0.0.1**. Apache-2.0. This repository contains the package, example backend, marketing website, and searchable documentation.
 
 ## What it does
 
@@ -20,7 +20,11 @@ A route identifies one provider account or transport. It is not a recipient segm
 
 ## Example
 
-After publication, install `@clipin/convex-emails` and `convex`. Until then, use the workspace example or a locally packed tarball.
+Install the package and Convex:
+
+```sh
+npm install @clipin/convex-emails convex
+```
 
 ```ts
 // convex/convex.config.ts

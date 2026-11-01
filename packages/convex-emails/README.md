@@ -50,4 +50,4 @@ The default is offline. One recipient is supported per job. This package does no
 - [Source and local setup](https://github.com/clipinfit/convex-emails)
 - [Documentation source](https://github.com/clipinfit/convex-emails/tree/main/apps/web/content/docs)
 
-The source is prepared for 0.0.1. npm publication is a separate release step.
+Install with `npm install @clipin/convex-emails convex`.
