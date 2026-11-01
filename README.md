@@ -6,6 +6,8 @@ One component owns the queue, future sends, pacing, retries, and delivery record
 
 Version **0.0.1**. Apache-2.0. This repository contains the package, example backend, marketing website, and searchable documentation.
 
+[Website](https://convex-emails.vercel.app) · [Documentation](https://convex-emails.vercel.app/docs) · [Getting started](https://convex-emails.vercel.app/docs/getting-started)
+
 ## What it does
 
 - Enqueues email with the application mutation and schedules a host worker automatically.
@@ -106,4 +108,4 @@ Version 0.0.1 sends one HTML transactional email per job. It does not manage cam
 
 The component does not guarantee exactly-once delivery or inbox placement. Resend retries use its replayable idempotency response within a bounded window. Plunk's ambiguous responses stop for reconciliation. A worker that loses its lease also stops for review.
 
-See the [documentation source](apps/web/content/docs), [contribution guide](CONTRIBUTING.md), and [release procedure](RELEASING.md).
+See the [documentation](https://convex-emails.vercel.app/docs), [contribution guide](CONTRIBUTING.md), and [release procedure](RELEASING.md).

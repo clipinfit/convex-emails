@@ -19,7 +19,17 @@ No workflow in this repository publishes automatically. Publication requires mai
 
 ## Deploy the website separately
 
-Build `apps/web` from the monorepo root dependency installation. Use its Next.js build output. Add a verified project URL to package metadata only after the site is deployed. There is no production hosting configuration or domain claim in this repository.
+The website and docs run at [convex-emails.vercel.app](https://convex-emails.vercel.app). The Vercel project connects to this repository and deploys `main` to production.
+
+Use these project settings when restoring the deployment:
+
+- Root directory: `apps/web`.
+- Framework: Next.js.
+- Include source files outside the root directory: enabled for the Bun workspace.
+- Install and build commands: defined in `apps/web/vercel.json`.
+- Environment variables: none required.
+
+Run the source checks before pushing. After deployment, verify the homepage, `/docs`, and documentation search. Website deployment does not publish the npm package or deploy the example backend.
 
 ## Submit the component separately
 

@@ -48,6 +48,7 @@ A route must remain bound to one provider account. Keep a separate worker and we
 The default is offline. One recipient is supported per job. This package does not manage marketing campaigns or contacts. An ambiguous result can require manual reconciliation. No exactly-once or inbox-placement guarantee is made.
 
 - [Source and local setup](https://github.com/clipinfit/convex-emails)
-- [Documentation source](https://github.com/clipinfit/convex-emails/tree/main/apps/web/content/docs)
+- [Website](https://convex-emails.vercel.app)
+- [Documentation](https://convex-emails.vercel.app/docs)
 
 Install with `npm install @clipin/convex-emails convex`.
