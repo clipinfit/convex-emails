@@ -1,0 +1,26 @@
+---
+title: Keep your React Email templates
+description: Render and preview locally, then send the resulting HTML.
+---
+
+React Email remains independent of the provider. Keep your React components, assets, CSS approach, and `email dev` preview workflow. Neither adapter changes the React template.
+
+Render the component in your application and pass the output as `html`:
+
+```tsx
+import { render } from "@react-email/render";
+import { WelcomeEmail } from "../emails/welcome";
+
+const html = await render(<WelcomeEmail name="Alex" />);
+// Pass html to your authorized enqueue mutation.
+```
+
+If rendering needs Node.js dependencies, render in a Node action and call an internal enqueue mutation with the HTML. Keep the generated delivery worker and component functions in normal Convex files. The renderer is an application dependency, not a dependency of this package.
+
+## What can differ
+
+The adapter sends your HTML unchanged. A provider can add tracking or modify content after receipt. Provider template variables and unsubscribe placeholders are not portable HTML. Replace those with application-owned links or the selected provider's supported mechanism.
+
+Resend accepts a separate `text` body. The Plunk adapter rejects an explicit text override and sends HTML through its supported body field. Check the received MIME content in a controlled provider test.
+
+Local preview does not prove mailbox rendering, DNS authentication, or inbox placement. Verify the final received email for each sender and provider before moving production traffic.

@@ -1,0 +1,74 @@
+{
+  "name": "@clipin/convex-emails",
+  "version": "0.0.1",
+  "description": "Persistent email delivery for Convex with Plunk and Resend adapters",
+  "type": "module",
+  "license": "Apache-2.0",
+  "author": "Denis Ciccale",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clipinfit/convex-emails.git",
+    "directory": "packages/convex-emails"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/client/index.js",
+  "types": "./dist/client/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/client/index.d.ts",
+      "default": "./dist/client/index.js"
+    },
+    "./convex.config.js": {
+      "types": "./dist/component/convex.config.d.ts",
+      "default": "./dist/component/convex.config.js"
+    },
+    "./convex.config": {
+      "types": "./dist/component/convex.config.d.ts",
+      "default": "./dist/component/convex.config.js"
+    },
+    "./_generated/component.js": {
+      "types": "./dist/component/_generated/component.d.ts"
+    },
+    "./test": "./src/test.ts",
+    "./package.json": "./package.json",
+    "./plunk": {
+      "types": "./dist/adapters/plunk.d.ts",
+      "default": "./dist/adapters/plunk.js"
+    },
+    "./resend": {
+      "types": "./dist/adapters/resend.d.ts",
+      "default": "./dist/adapters/resend.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "prepack": "bun run build",
+    "codegen": "cd ../.. && convex codegen --component-dir packages/convex-emails/src/component"
+  },
+  "peerDependencies": {
+    "convex": ">=1.49.0 <2"
+  },
+  "devDependencies": {
+    "convex": "1.49.0",
+    "convex-test": "0.0.66",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5",
+    "vite": "8.3.5",
+    "@types/node": "26.6.6"
+  },
+  "dependencies": {
+    "svix": "2.9.1"
+  }
+}

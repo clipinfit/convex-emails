@@ -1,0 +1,69 @@
+---
+title: API reference
+description: Client options, message fields, and trusted component operations.
+---
+
+## Exports
+
+| Import | Exports |
+| --- | --- |
+| `@clipin/convex-emails` | `Emails`, `workerArgs`, `EmailOptions`, `Adapter`, `AdapterOptions`, `Message`, `Outcome`, `EmailEvent`, `WebhookError` |
+| `@clipin/convex-emails/plunk` | `plunk`, `parsePlunkEvent` |
+| `@clipin/convex-emails/resend` | `resend`, `parseResendEvent` |
+| `@clipin/convex-emails/convex.config.js` | Component definition |
+| `@clipin/convex-emails/test` | `register`, default schema and module helper |
+
+## Constructor
+
+`new Emails(components.emails, options)` accepts:
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `adapter` | Required | Provider adapter bound to one stable route |
+| `testMode` | `true` | Complete through the worker without an HTTP send |
+| `intervalMs` | `1000` | Minimum interval between claims per route, at least 100 ms |
+| `maxAttempts` | `5` | Maximum claimed send attempts, integer from 1 through 20 |
+
+Both built-in adapters accept `route` and optional `apiKey`, `webhookSecret`, and `apiBaseUrl`. Credentials fall back to the corresponding host environment variables. A custom API URL must use HTTPS without credentials, query parameters, or a fragment.
+
+## sendEmail
+
+`email.sendEmail(ctx, args)` returns a local email ID. The context provides `runMutation`. A host mutation can commit application data and enqueue work in the same transaction.
+
+| Field | Requirement |
+| --- | --- |
+| `worker` | Exported internal action reference from `email.worker()` |
+| `idempotencyKey` | Nonempty business key, at most 200 characters |
+| `from`, `to` | One plain address each, at most 254 characters |
+| `subject` | Nonempty, at most 998 characters, no CR or LF |
+| `html` | Nonempty, at most 500,000 UTF-8 bytes |
+| `text` | Optional, at most 500,000 UTF-8 bytes; Resend only |
+| `replyTo` | Optional plain address |
+| `headers` | Optional string map with valid header names and values |
+| `scheduledAt` | Optional future Unix timestamp in milliseconds |
+
+Display-name address syntax, recipient arrays, CC, BCC, and attachments are not supported. Header values cannot contain CR or LF and cannot exceed 998 characters. `Authorization` and `Idempotency-Key` are reserved. Convex document size limits still apply to the complete record.
+
+The component normalizes the recipient to lowercase. Reusing a key with different content, route, provider, worker, or test mode throws. Reusing a matching key returns the existing ID. It does not reschedule that message.
+
+## Other client methods
+
+- `worker()` creates an internal action. Export it from the host and pass its reference to `sendEmail`.
+- `getStatus(ctx, id)` returns the stored record or `null`. Records include content and recipient data.
+- `cancel(ctx, id)` stops queued work and returns a boolean. A previous ambiguous attempt produces `uncertain`, even when retries stop.
+- `setRestriction(ctx, { email, blocked, marketingUnsubscribed })` replaces the recipient restriction. This is a trusted operation.
+- `handleWebhook(ctx, request)` authenticates and applies normalized provider events.
+
+## Trusted component operations
+
+Use `ctx.runQuery` or `ctx.runMutation` with `components.emails.lib` from authorized server code:
+
+| Function | Arguments and result |
+| --- | --- |
+| `get` | `{ id }` → record or null |
+| `list` | `{ paginationOpts: { cursor, numItems } }` → paginated records |
+| `restriction` | `{ email }` → restriction or null |
+| `resolveUncertain` | `{ id, resolution: { kind: "accepted", providerId } }` or `{ id, resolution: { kind: "failed", reason } }` |
+| `cleanup` | `{ before }` → number of terminal records removed |
+
+`enqueue`, `claim`, `finish`, `event`, and `restrict` are component internals exposed to the host for orchestration. Do not expose them as unrestricted client functions.

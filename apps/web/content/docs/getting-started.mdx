@@ -1,0 +1,62 @@
+---
+title: Send an offline email
+description: Mount the component and run its automatic worker without credentials.
+---
+
+Use Node.js 22 or later. After npm publication, install:
+
+```sh
+npm install @clipin/convex-emails convex
+```
+
+Until publication, clone the repository and run its example backend, or install a tarball produced by `npm pack` in `packages/convex-emails`.
+
+## Mount and configure
+
+```ts
+// convex/convex.config.ts
+import { defineApp } from "convex/server";
+import emails from "@clipin/convex-emails/convex.config.js";
+
+const app = defineApp();
+app.use(emails);
+export default app;
+```
+
+```ts
+// convex/emails.ts
+import { Emails } from "@clipin/convex-emails";
+import { resend } from "@clipin/convex-emails/resend";
+import { components, internal } from "./_generated/api";
+import { internalMutation } from "./_generated/server";
+
+const email = new Emails(components.emails, {
+	adapter: resend({ route: "resend-primary" }),
+	// The default records a test result without an HTTP send.
+	testMode: true,
+});
+export const deliver = email.worker();
+export const example = internalMutation({
+	args: {},
+	handler: async (ctx): Promise<string> => email.sendEmail(ctx, {
+		worker: internal.emails.deliver,
+		idempotencyKey: "welcome:example-user",
+		from: "hello@example.com",
+		to: "reader@example.com",
+		subject: "Welcome aboard",
+		html: "<h1>You're in.</h1>",
+	}),
+});
+```
+
+Run `npx convex dev` to generate the component API and install the functions. Then run `npx convex run emails:example`. The mutation returns a local record ID. The scheduled worker changes that record from `queued` to `test`.
+
+This setup does not call Resend. The same setup works with `plunk({ route: "plunk-primary" })` from the Plunk adapter export.
+
+## Enable a controlled live send
+
+Configure `RESEND_API_KEY` or `PLUNK_API_KEY` in the host deployment environment. Use a verified sender and an approved recipient. Set `testMode: false` in the `Emails` constructor. Use a new business key for the live message.
+
+Keep the worker in a normal Convex file. It does not require a `"use node"` directive. Mount each provider's [webhook route](/docs/webhooks) before relying on delivery state.
+
+The example mutation is internal. If your application exposes an enqueue operation to clients, authorize the operation in that application function.

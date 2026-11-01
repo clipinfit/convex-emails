@@ -1,0 +1,26 @@
+---
+title: Move delivery between providers
+description: Preserve restrictions and finish existing work before switching.
+---
+
+## Prepare
+
+Inventory direct provider calls, the existing component, templates, webhooks, contacts, and scheduled campaigns. This package replaces the supported transactional delivery path. It does not migrate campaigns, segments, provider templates, or domain settings.
+
+Verify the destination sender domain and its required DNS records. Preserve SPF, DKIM, and DMARC alignment according to that provider's instructions. Account quotas and custom-domain limits remain provider concerns.
+
+## Preserve recipient state
+
+Export current unsubscribe, bounce, and complaint records to private storage. Merge those restrictions into the new component before enabling live sends. Keep provider-side opt-outs intact. Do not resubscribe contacts as part of the migration. See [recipient restrictions](/docs/suppression).
+
+## Finish existing work
+
+Drain or reconcile the old queue. Keep its worker and webhook route active until the remaining records are resolved. A component record does not move between providers when you change an import.
+
+Create a new stable route for the new account and export a new worker. Do not repoint an existing route to a different account. Avoid cross-provider retries for uncertain old sends. Both providers could otherwise accept the same logical email.
+
+## Validate and switch
+
+Run an offline example. Send a controlled live message to an approved mailbox. Check content, authentication, webhook receipt, and suppression behavior. Switch a narrow application path first, then monitor failures and unclear outcomes.
+
+Map application calls explicitly. The public API supports one recipient and one request per job. Provider-specific fields need a separate implementation if they are outside that API.

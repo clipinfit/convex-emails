@@ -1,0 +1,34 @@
+---
+title: Scheduling and cancellation
+description: Schedule with Convex and pace work per provider route.
+---
+
+Pass a future Unix timestamp in milliseconds as `scheduledAt`. Omit it for the earliest available dispatch slot.
+
+```ts
+await email.sendEmail(ctx, {
+	worker: internal.emails.deliver,
+	idempotencyKey: "reminder:example-event",
+	from: "hello@example.com",
+	to: "reader@example.com",
+	subject: "Your event starts soon",
+	html: "<p>See you soon.</p>",
+	scheduledAt: Date.now() + 60 * 60 * 1000,
+});
+```
+
+Convex stores the job and invokes the host worker. The provider receives the request when the worker sends it. No provider-side scheduled campaign is created.
+
+The timestamp is a due time, not a guaranteed arrival time. Queue load, provider throttling, retries, and mailbox delivery can delay arrival. Convert user time zones to an absolute timestamp in the application.
+
+## Pacing
+
+`intervalMs` sets the minimum interval between claims on the same route. The default is 1,000 ms. Use one consistent interval for all workers that share a route. If the account also sends outside this component, account for that traffic separately.
+
+A distant future job does not reserve all earlier slots. A dispatch gate spaces simultaneous due jobs. Different routes have independent gates. The component does not implement a global concurrency pool or batch API.
+
+## Cancellation
+
+Call `email.cancel(ctx, id)` before the worker claims the job. It returns `true` when queued work is stopped. It returns `false` for an active or terminal record.
+
+If an earlier attempt may already have been accepted, cancellation stops retries but leaves `uncertain` as the outcome. A new deployment must keep the same worker exports for pending jobs. Do not rename or remove those exports until their queue is drained or reconciled.

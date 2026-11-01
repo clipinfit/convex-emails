@@ -1,0 +1,47 @@
+---
+title: Delivery and retries
+description: Understand state, idempotency, and unclear provider outcomes.
+---
+
+## State model
+
+A record starts as `queued`. A worker claims it atomically and changes it to `processing`. A successful provider response produces `accepted`. An authenticated delivery event produces `delivered`.
+
+| State | Meaning |
+| --- | --- |
+| `queued` | Waiting for its due time, pacing slot, or retry |
+| `processing` | One worker owns the current attempt |
+| `accepted` | Provider returned a message ID |
+| `delivered` | Provider reported delivery, not inbox placement |
+| `bounced`, `complained` | Provider reported a permanent bounce or complaint |
+| `failed` | A definitive failure or exhausted non-ambiguous budget |
+| `uncertain` | Acceptance is possible but unconfirmed |
+| `cancelled` | Queued work stopped without an ambiguous earlier attempt |
+| `suppressed` | A local block stopped the message before a send |
+| `test` | Offline worker completed without HTTP |
+
+Delivery events cannot downgrade a complaint to a bounce or delivery. Early events are retained and applied when a provider ID becomes available. Correlation uses route, provider ID, and recipient.
+
+## Two deduplication layers
+
+Your business key deduplicates records within a component mount. The worker sends a separate stable provider key, `convex-emails:<record-id>`. Every retry uses that same key and message. Local records preserve deduplication until cleanup deletes them.
+
+The built-in adapters use a 23-hour retry window from the first claim. The shorter window leaves a margin inside the provider's documented 24-hour key lifetime. Each claim checks the deadline before sending. A delayed job cannot silently retry after this deadline.
+
+[Resend can replay a response for the same key](https://resend.com/docs/dashboard/emails/idempotency-keys). [Plunk rejects a duplicate key](https://docs.useplunk.com/guides/idempotency). The adapters therefore use different failure policies.
+
+## Retries and recovery
+
+Retries honor `Retry-After` when present. Otherwise, delay grows exponentially and stops at 60 seconds. A provider-requested longer delay is preserved. The job stops if the next attempt would exceed the time or attempt budget.
+
+A claimed worker has a 60-second lease. A lost lease produces `uncertain`. The component does not assume that the network request failed. Unclaimed scheduled jobs receive at most five recovery schedules.
+
+Any earlier ambiguous attempt remains relevant. Exhausting retries, receiving a later definitive error, cancelling retries, or blocking the recipient cannot erase that ambiguity.
+
+## Resolve an uncertain record
+
+Inspect the provider and correlate the recipient, subject, time, and message ID. Then call `components.emails.lib.resolveUncertain` from trusted server code.
+
+An accepted resolution needs a provider ID that is not already assigned to another local record on that route. A failed resolution needs a reason. The operation does not resend. Only enqueue a new business key when you have evidence that another send is appropriate.
+
+Exactly-once email delivery is not guaranteed. The component records uncertainty rather than hiding it.

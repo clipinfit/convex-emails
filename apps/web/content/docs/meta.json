@@ -1,0 +1,17 @@
+{
+  "title": "Documentation",
+  "pages": [
+    "index",
+    "getting-started",
+    "api",
+    "adapters",
+    "delivery",
+    "scheduling",
+    "suppression",
+    "webhooks",
+    "react-email",
+    "migration",
+    "operations",
+    "release-status"
+  ]
+}

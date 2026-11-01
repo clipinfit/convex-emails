@@ -1,0 +1,45 @@
+---
+title: Provider adapters
+description: Compare Plunk and Resend behavior without hiding their differences.
+---
+
+An adapter maps the common message to a provider request. The core persists its name and route with the job. The route identifies one provider account. Keep that identity stable across deployments.
+
+| Capability | Plunk | Resend |
+| --- | --- | --- |
+| Endpoint | `https://next-api.useplunk.com/v1/send` | `https://api.resend.com/emails` |
+| Host API key | `PLUNK_API_KEY` | `RESEND_API_KEY` |
+| HTML | Yes | Yes |
+| Explicit plain text | Rejected | Supported |
+| HTTP 429 | Bounded retry | Bounded retry |
+| Timeout, network failure, HTTP 5xx | Stop as uncertain | Retry with the same key within the budget |
+| HTTP 409 | Uncertain | Retry only `concurrent_idempotent_requests`; otherwise uncertain |
+| Webhook authentication | Workflow bearer secret | Svix signature and timestamp |
+| Subscription mutation on send | None | None |
+
+Plunk maps `html` to `body` and `replyTo` to `reply`. Resend maps `replyTo` to `reply_to` and sends `to` as a one-item array. Each request has a 20-second timeout and rejects redirects.
+
+## Select an adapter
+
+```ts
+import { Emails } from "@clipin/convex-emails";
+import { plunk } from "@clipin/convex-emails/plunk";
+import { resend } from "@clipin/convex-emails/resend";
+
+const primary = new Emails(components.emails, {
+	adapter: plunk({ route: "plunk-primary" }),
+});
+const secondary = new Emails(components.emails, {
+	adapter: resend({ route: "resend-primary" }),
+});
+```
+
+Export a worker and webhook for each instance. Both can share one component mount. Restrictions apply across that mount. Independent mounts have independent restrictions and pacing.
+
+## Custom adapters
+
+The public `Adapter` type defines `name`, `route`, `retryWindowMs`, `capabilities.text`, `send`, and `verifyWebhook`. `send` returns a discriminated `Outcome`: `accepted`, `retry`, `failed`, or `uncertain`.
+
+A retry includes `delayMs` and `ambiguous`. Set `ambiguous: true` if an earlier request may have been accepted. Never return a retry for an ambiguous request unless the provider supports safe replay with the supplied key. Use `WebhookError` to return an authentication status from `verifyWebhook`.
+
+Custom adapters run as trusted host code. The component cannot enforce the truth of their safety claims. There is no automatic cross-provider failover.

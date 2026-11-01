@@ -1,0 +1,23 @@
+---
+title: Email delivery for Convex
+description: One persistent queue with Plunk and Resend adapters.
+---
+
+`convex-emails` schedules email jobs, records their state, and applies provider-specific retry rules. Your Convex application owns the message and authorization. Your selected adapter owns the provider request.
+
+Version **0.0.1** includes Plunk and Resend adapters. The package is prepared for publication. See [release status](/docs/release-status) for validation and publication details.
+
+Start with [the offline example](/docs/getting-started), compare [adapter behavior](/docs/adapters), or read [the API reference](/docs/api).
+
+## Ownership
+
+| Layer | Responsibility |
+| --- | --- |
+| Application | Authorization, content, consent, verified senders, and provider credentials |
+| Component | Queue, scheduling, pacing, deduplication, retry budget, state, and restrictions |
+| Adapter | HTTP request, response classification, webhook authentication, and normalized events |
+| Provider | Email transport, account quotas, sender verification, and mailbox delivery |
+
+React Email remains a local renderer. Its HTML enters the same queue as any other template output.
+
+Version 0.0.1 supports transactional messages with one recipient. Campaigns, segments, contact synchronization, attachments, and provider templates are outside this version.

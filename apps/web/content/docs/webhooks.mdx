@@ -1,0 +1,68 @@
+---
+title: Configure webhooks
+description: Verify callbacks and apply delivery and suppression events.
+---
+
+## Register a route per adapter
+
+Export an HTTP action beside each `Emails` instance:
+
+```ts
+import { httpAction } from "./_generated/server";
+export const webhook = httpAction((ctx, request) =>
+	email.handleWebhook(ctx, request),
+);
+```
+
+Register it in `convex/http.ts`:
+
+```ts
+import { httpRouter } from "convex/server";
+import { webhook } from "./emails";
+const http = httpRouter();
+http.route({ path: "/email-webhook", method: "POST", handler: webhook });
+export default http;
+```
+
+Use your deployment's `.convex.site` HTTP action URL. Use distinct paths and secrets for different accounts.
+
+## Resend
+
+Set `RESEND_WEBHOOK_SECRET` to the endpoint signing secret. Subscribe the endpoint to `email.delivered`, `email.bounced`, and `email.complained`. The adapter verifies the unmodified request body with Svix before parsing the event. It requires `svix-id`, `svix-timestamp`, and `svix-signature`.
+
+See [Resend webhook verification](https://resend.com/docs/webhooks/verify-webhooks-requests). Resend contact and subscription-topic synchronization is outside this adapter.
+
+## Plunk
+
+Set `PLUNK_WEBHOOK_SECRET` in the host. Create a workflow webhook for each supported trigger. Configure `Authorization: Bearer YOUR_SECRET` on each request. The custom body must include a literal event `type`:
+
+```json
+{
+  "type": "email.bounce",
+  "contact": { "email": "{{email}}" },
+  "event": {
+    "emailId": "{{event.emailId}}",
+    "bounceType": "{{event.bounceType}}"
+  }
+}
+```
+
+| Workflow trigger | Fields in the custom body |
+| --- | --- |
+| `email.delivery` | `contact.email`, `event.emailId` |
+| `email.bounce` | `contact.email`, `event.bounceType`; include `event.emailId` |
+| `email.complaint` | `contact.email`; include `event.emailId` |
+| `contact.unsubscribed` | `contact.email`, `event: {}` |
+| `contact.subscribed` | `contact.email`, `event: {}` |
+
+Plunk's default body lacks the required `type`. A `Permanent` bounce blocks the recipient. A `Transient` bounce is ignored. Unknown bounce types are rejected. Test interpolation in your account.
+
+This uses a shared secret, not a provider signature. Plunk workflow callbacks have no automatic failure retry. Arrange reconciliation for missed events. See [Plunk webhooks](https://docs.useplunk.com/guides/webhooks).
+
+## Receiver behavior
+
+The receiver limits the body to 64 KiB and rejects invalid UTF-8. Authentication precedes JSON parsing and database changes. Exact repeated bodies are deduplicated per route. Selected normalized fields are stored, not raw payloads.
+
+Successful processing returns 204. Bad authentication returns 401. Missing credentials return 503. Invalid payloads return 400. Oversized bodies return 413. Non-POST requests return 405. Database failures propagate so the provider can observe the failure.
+
+No polling reconciliation job or event-retention job is included. Delivery state can remain `accepted` when a callback is lost.

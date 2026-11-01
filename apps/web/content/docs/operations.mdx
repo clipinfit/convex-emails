@@ -1,0 +1,30 @@
+---
+title: Operate the queue
+description: Monitor unclear outcomes and choose a retention policy.
+---
+
+## Monitoring
+
+Use `components.emails.lib.list` with pagination from a trusted admin query. Monitor `uncertain`, `failed`, old `queued` records, and accepted messages that lack delivery events. The package does not provide alerts or an admin dashboard.
+
+Each record contains its route, provider, worker, claim count, recovery count, timestamps, message, and result. Protect these records as private message data. `accepted` means provider acceptance. It does not mean inbox delivery.
+
+## Retention
+
+Call `components.emails.lib.cleanup({ before })` through a host mutation. The cutoff must be finite and at least 24 hours old. One call deletes up to 50 records for each terminal state, at most 400 total. Repeat from your application maintenance workflow when needed.
+
+Queued, processing, and uncertain records are preserved. Restrictions and events are also preserved. There is no built-in retention job for events. Plan storage and deletion needs before sustained use.
+
+Deleting a message also deletes its business-key deduplication. A later enqueue with that key can send again. Keep records for the full period in which your application may replay a business operation.
+
+## Deployments and credentials
+
+Keep exported worker references valid while jobs exist. A deployment change can break a scheduled worker if the export disappears. Store credentials in the host environment. Rotating a key for the same account can preserve the route. Moving to another account requires a new route.
+
+Pacing applies only to traffic through the same component mount and route. It does not coordinate with other applications or direct provider calls.
+
+## Tests
+
+`bun run test` runs the Convex test harness and mocked HTTP contracts. The suite does not require provider credentials. `bun run pack:check` installs a temporary tarball in a fresh consumer and verifies imports, types, and the public test helper.
+
+Use `register(t)` from `@clipin/convex-emails/test` with `convex-test` when testing a consuming application. Vite or Vitest is required for the helper's source module discovery.

@@ -1,0 +1,12 @@
+---
+title: Version 0.0.1
+description: Initial release scope and validation boundaries.
+---
+
+The source targets **0.0.1** without a prerelease suffix. npm publication and Convex directory submission are pending. The website is prepared for deployment.
+
+The release includes the persistent transactional queue, Plunk and Resend adapters, automatic host workers, pacing, bounded retries, future sends, local restrictions, webhook receivers, tests, and documentation.
+
+The test suite uses the Convex test harness and mocked provider HTTP contracts. Offline checks are distinct from live account validation. No production delivery or volume guarantee is made.
+
+Before routing production traffic, validate the selected account, sending domain, quota, webhook configuration, suppression import, and received email. High-volume load testing and complete provider feature parity are not claimed.

@@ -1,0 +1,37 @@
+---
+title: Recipient restrictions
+description: Preserve unsubscribe and bounce records across providers.
+---
+
+The component stores two independent flags per normalized email address:
+
+| Flag | Effect |
+| --- | --- |
+| `blocked` | Stops all new sends from this component mount |
+| `marketingUnsubscribed` | Stores marketing preference for the application |
+
+A permanent bounce or complaint sets both flags. An unsubscribe event sets `marketingUnsubscribed`. A subscribed event never clears either flag automatically.
+
+Version 0.0.1 sends transactional messages. A marketing opt-out alone does not suppress transactional sends. The package does not provide a campaign API. If your application builds marketing delivery on top, check consent and marketing restrictions before enqueue and again before delivery in your own workflow.
+
+## Import existing restrictions
+
+Before switching delivery, export unsubscribed, bounced, and complained contacts from every relevant source. Keep the original evidence in private storage. Merge restrictions conservatively: any known block or opt-out wins.
+
+Use `setRestriction` from an authorized migration function. Preserve both existing flags when importing updates. Do not call it with `false` defaults that clear an existing restriction.
+
+```ts
+await email.setRestriction(ctx, {
+	email: "reader@example.com",
+	blocked: false,
+	marketingUnsubscribed: true,
+});
+```
+
+This example describes a known marketing opt-out with no hard block. It is not a generic merge function. The method replaces both flags.
+
+Neither built-in adapter sends `subscribed: true`, updates contacts, or imports a list. Local restrictions do not automatically synchronize provider contact records. Keep provider-side suppression active too.
+
+## Clear a restriction
+
+Require explicit consent evidence or a reviewed correction in the host application. Then use the trusted restriction API. Do not expose unrestricted clearing to public clients. Cleanup never deletes restrictions.
